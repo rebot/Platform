@@ -1,37 +1,68 @@
-const fs = require('fs')
-const path = require('path')
-const { series, src, dest, symlink } = require('gulp')
-
-const unzip = require('gulp-unzip')
+const { promisify } = require('util')
+const { series, src, dest } = require('gulp')
 const flatten = require('gulp-flatten')
-const download = require('gulp-download')
+
+const __exec = promisify(require('child_process').exec)
 
 /**
  * Clean function
  *
- * @param {*} cb
  */
 async function clean () {
-  console.log('Cleaning...')
+  // Move the css files
+  src('client/src/*.css')
+    .pipe(flatten())
+    .pipe(dest('client/src/css/'))
+  // Move the js files
+  src(['client/src/*.js', '!client/src/index.js'])
+    .pipe(flatten())
+    .pipe(dest('client/src/js/'))
 }
 
 /**
- * Setup the Sweco environment
+ * Execute a command
  *
- * @param {*} cb
+ * @param {*} cmd
+ * @param {string} [at='./']
+ * @returns
  */
-async function setup () {
-  // Clone the repository
-  const tempDir = path.normalize(`${__dirname}/temp/`)
-  download('https://github.com/teminl/sweco-digital-platforms/archive/master.zip').pipe(unzip()).pipe(dest(tempDir))
-  // 
-  //const swecoTemplate = path.normalize(`${__dirname}/temp/sweco-digital-platforms-master`)
-  // Move .js files to the client, the React webapp
-  //const jsDir = path.normalize('client/src/js/')
-  //src(path.join(swecoTemplate, '**', '*.js')).pipe(flatten()).pipe(symlink(jsDir))
-  // Move .css files to the client, the React webapp
-  //const cssDir = path.normalize('client/src/css/')
-  //src(path.join(swecoTemplate, '**', '*.css')).pipe(flatten()).pipe(symlink(cssDir))
+const exec = (cmd, at = './') => {
+  // Run a command
+  if (cmd === undefined) {
+    return '`cmd` argument is required'
+  }
+  // Return a function to run the command
+  const func = async function (cb) {
+    const { err, stdout, stderr } = await __exec(`cd ${at} && ${cmd}`)
+    console.log(stdout)
+    return cb(err)
+  }
+  // Return the task
+  func.displayName = `exec:${cmd.split(' ')[0]}`
+  return func
 }
 
-exports.default = series(clean, setup)
+/**
+ * Yarn install package
+ *
+ * @param {*} pkg
+ * @param {string} [at='./']
+ * @returns
+ */
+const yarn = (pkg, at = './') => {
+  // Install NPM package using yarn
+  if (pkg === undefined) {
+    return '`pkg` argument is required'
+  }
+  // Return a function to install the package
+  const func = exec(`yarn add ${pkg}`, at)
+  // Return function
+  func.displayName = `install:${pkg}`
+  return func
+}
+
+exports.default = series(
+  exec('npx create-react-app client'),
+  exec('yarn install', 'client'),
+  yarn('bootstrap', 'client')
+)
