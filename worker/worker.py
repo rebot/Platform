@@ -25,7 +25,7 @@ if __name__ == '__main__':
             if uuid:
                 # Define the broadcast channel
                 broadcast = f'broadcast-{uuid.group(0)}'
-                print('hello world', broadcast)
+                print(f'New job - ID {uuid.group(0)} - Message: {message["data"]}')
                 # Load the data
 
                 # Do something with the data

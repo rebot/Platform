@@ -39,13 +39,11 @@ wss.on('connection', s => {
   const broadcast = `broadcast-${id}`
   // Listen to incomming messages of the `Client`
   s.on('message', raw => {
-    const json = JSON.parse(raw)
-    if ('filename' in json) {
-      // Start a new publisher
-      const publisher = r.duplicate()
-      console.log(`Your filename ${json.filename}`)
-      publisher.publish(queue, raw)
-    }
+    // Start a new publisher
+    const publisher = r.duplicate()
+    // Publish the job to the queue
+    publisher.publish(queue, raw)
+    // Send a message back to the client
     s.send('Queing the job... ')
   })
   // Listen to incomming messages of the `Worker`

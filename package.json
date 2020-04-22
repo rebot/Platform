@@ -6,8 +6,10 @@
   "author": "B0hr <trenson.gilles@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "dev": "cd client && yarn start",
     "setup": "npx gulp",
-    "start": "node server"
+    "start": "node server",
+    "build": "cd client && yarn build"
   },
   "devDependencies": {
     "gulp": "^4.0.2",
