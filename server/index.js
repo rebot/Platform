@@ -3,19 +3,20 @@ require('dotenv').config()
 const ws = require('ws')
 const http = require('http')
 const path = require('path')
+const uuid = require('uuid')
 const redis = require('redis')
 const express = require('express')
 const bodyParser = require('body-parser')
 
-const { promisify } = require('util')
+const {
+  promisify
+} = require('util')
 
 // Configure the redis instance
 
 const r = redis.createClient(process.env.REDIS_URL || 'redis://localhost:6379')
 
-r.on('error', function (err) {
-  console.error(err)
-})
+r.on('error', err => console.error(err))
 
 // Configure the express instance
 
@@ -24,17 +25,34 @@ const app = express()
 // Reuse the HTTP server instance to implement websockets
 // https://stackoverflow.com/questions/17696801/express-js-app-listen-vs-server-listen
 const server = http.createServer(app)
-const wss = new ws.Server({ server })
+const wss = new ws.Server({
+  server
+})
 
 // Define the websocket instance
 wss.on('connection', s => {
+  // Start new subscriber and publisher
+  const subscriber = r.duplicate()
   // Conneciton is up
+  const id = uuid.v4()
+  const queue = `queue-${id}`
+  const broadcast = `broadcast-${id}`
+  // Listen to incomming messages of the `Client`
   s.on('message', raw => {
     const json = JSON.parse(raw)
     if ('filename' in json) {
+      // Start a new publisher
+      const publisher = r.duplicate()
       console.log(`Your filename ${json.filename}`)
+      publisher.publish(queue, raw)
     }
-    setTimeout(() => s.send('Thank you for your message'), 3000)
+    s.send('Queing the job... ')
+  })
+  // Listen to incomming messages of the `Worker`
+  subscriber.subscribe(broadcast)
+  subscriber.on('message', (channel, message) => {
+    // Send the result of the job
+    s.send(message)
   })
   // Send a welcoming message
   s.send('Hi, I\'m ready to serve you')

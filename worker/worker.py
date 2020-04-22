@@ -1,7 +1,10 @@
 import os
+import re
 import json 
 import time
 import redis
+
+UUID = re.compile(r'(?<=queue-).*')
 
 if __name__ == '__main__':
     
@@ -9,14 +12,27 @@ if __name__ == '__main__':
 
     r = redis.from_url(url)
     p = r.pubsub()
-    p.subscribe('sweco')
+    p.psubscribe('queue-*')
 
     while True:
         # Retrieve the message
         message = p.get_message()
+        # Process if message is received on a pattern subsr.
+        if message and message['type'] == 'pmessage':
+            # Retrieve the channel
+            uuid = UUID.search(message['channel'].decode())
+            # If uuid has been found
+            if uuid:
+                # Define the broadcast channel
+                broadcast = f'broadcast-{uuid.group(0)}'
+                print('hello world', broadcast)
+                # Load the data
 
-        if message and message['type'] == 'message':
-            body = json.loads(message['data'])
+                # Do something with the data
+                time.sleep(5)
+
+                # Give back the answer
+                r.publish(broadcast, 'Job done!')
         
         # Sleep 10 seconds
         time.sleep(2)

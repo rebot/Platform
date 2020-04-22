@@ -6,7 +6,8 @@
   "author": "B0hr <trenson.gilles@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "setup": "npx gulp"
+    "setup": "npx gulp",
+    "start": "node server"
   },
   "devDependencies": {
     "gulp": "^4.0.2",
@@ -19,6 +20,7 @@
     "express": "^4.17.1",
     "npx": "^10.2.2",
     "redis": "^3.0.2",
+    "uuid": "^7.0.3",
     "ws": "^7.2.3"
   }
 }
