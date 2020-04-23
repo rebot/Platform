@@ -44,7 +44,7 @@ wss.on('connection', s => {
     // Publish the job to the queue
     publisher.publish(queue, raw)
     // Send a message back to the client
-    s.send('Queing the job... ')
+    s.send('SERVER - Queing the job... ')
   })
   // Listen to incomming messages of the `Worker`
   subscriber.subscribe(broadcast)
@@ -53,7 +53,7 @@ wss.on('connection', s => {
     s.send(message)
   })
   // Send a welcoming message
-  s.send('Hi, I\'m ready to serve you')
+  s.send('SERVER - Hi, I\'m ready to serve you')
 })
 
 app.use(bodyParser.urlencoded({

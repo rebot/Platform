@@ -1,3 +1,7 @@
 .App {
   text-align: center;
 }
+
+blockquote small {
+  mix-blend-mode: exclusion;
+}

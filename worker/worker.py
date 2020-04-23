@@ -25,14 +25,14 @@ if __name__ == '__main__':
             if uuid:
                 # Define the broadcast channel
                 broadcast = f'broadcast-{uuid.group(0)}'
-                print(f'New job - ID {uuid.group(0)} - Message: {message["data"]}')
+                print(f'WORKER - New job - ID {uuid.group(0)} - Message: {message["data"]}')
                 # Load the data
 
                 # Do something with the data
                 time.sleep(5)
 
                 # Give back the answer
-                r.publish(broadcast, 'Job done!')
+                r.publish(broadcast, 'WORKER - Job done!')
         
         # Sleep 10 seconds
         time.sleep(2)

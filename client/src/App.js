@@ -42,9 +42,9 @@ const Input = () => {
   )
 }
 
-const DropArea = ({ accept = ['*'] }) => {
+const DropArea = ({ name, accept = ['*'] }) => {
   useEffect(() => {
-    const dropArea = document.getElementById('drop-area')
+    const dropArea = document.getElementById(name)
     // Invert the colours on dragover
     dropArea.ondragover = e => {
       e.preventDefault()
@@ -55,26 +55,36 @@ const DropArea = ({ accept = ['*'] }) => {
       dropArea.classList.remove('text-white', 'bg-dark')
     }
     // Process the event on a drop
-    dropArea.ondrop = e => {
+    dropArea.ondrop = async e => {
       e.preventDefault()
+      dropArea.classList.remove('text-white', 'bg-dark')
       for (const file of e.dataTransfer.files) {
         const [_, name, ext] = /^(.*?)\.([a-z]*$)/.exec(file.name)
         // Check if extension is accepted
         if (accept.includes('*') || accept.includes(ext)) {
-          console.log(`"${ext}" extension is allowed`)
+          console.log(`CLIENT - Valid file : ${file.name}`)
+          // Start a new socket
+          const socket = await openSocket()
+          // Register an event listerer
+          socket.onmessage = e => {
+            console.log(e.data)
+          }
+          // Send the message
+          socket.send(file.name)
+        } else {
+          console.log(`CLIENT - Invalid file type : ${file.name}`)
         }
-
       }
     }
   }, [])
 
   return (
-    <div id='drop-area' className='card p-3 w-100'>
+    <div id={name} className='card p-3 mb-3 w-100'>
       <blockquote className='blockquote'>
-        <p className='mb-0'>Drop a <code>.shd</code> file</p>
+        <p className='mb-0'>Drop a <code>{accept.includes('*') ? 'any' : accept.join(',')}</code> file</p>
         <footer className='blockquote-footer'>
           <small className='text-muted'>
-            Drop it likes it hot by <cite title='Source Title'>Snoop Dogg</cite>
+            <cite title='quote'>Drop it likes it hot</cite> by Snoop Dogg
           </small>
         </footer>
       </blockquote>
@@ -95,7 +105,9 @@ const App = () => {
               <Input />
             </div>
             <div className='row pb-3'>
-              <DropArea accept={['png', 'gpx', 'py']}/>
+              <DropArea name='shd' accept={['shd']} />
+              <DropArea name='pdf' accept={['pdf']} />
+              <DropArea name='xml' accept={['xml']} />
             </div>
             <div className='row pb-3' />
           </div>
