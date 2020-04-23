@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import './App.css'
+import '../css/App.css'
 
 const openSocket = () => {
   return new Promise((resolve, reject) => {
     // Open the socket
-    const socket = new WebSocket(`ws://${window.location.host}`)
+    const socket = new WebSocket(`ws://${window.location.host}/ws`)
     // Register an event listener when the Socket is opened
     socket.onopen = () => {
       resolve(socket)
@@ -42,7 +42,7 @@ const Input = () => {
   )
 }
 
-const DropArea = ({ name, accept = ['*'] }) => {
+const DropArea = ({ name, accept = ['*'], onChange }) => {
   useEffect(() => {
     const dropArea = document.getElementById(name)
     // Invert the colours on dragover
@@ -64,13 +64,23 @@ const DropArea = ({ name, accept = ['*'] }) => {
         if (accept.includes('*') || accept.includes(ext)) {
           console.log(`CLIENT - Valid file : ${file.name}`)
           // Start a new socket
+          const reader = new FileReader()
           const socket = await openSocket()
           // Register an event listerer
           socket.onmessage = e => {
-            console.log(e.data)
+            onChange(e.data)
           }
-          // Send the message
-          socket.send(file.name)
+          // Retrieve the file content
+          reader.onload = e => {
+            const content = e.target.result
+            // Send the message
+            socket.send(JSON.stringify({
+              name: file.name,
+              content: content
+            }))
+          }
+          // Read the files content
+          reader.readAsDataURL(file)
         } else {
           console.log(`CLIENT - Invalid file type : ${file.name}`)
         }
@@ -92,11 +102,37 @@ const DropArea = ({ name, accept = ['*'] }) => {
   )
 }
 
-const App = () => {
+const File = ({ name, uri }) => {
   return (
-    <div className='container-fluid p-5'>
+    <div className='card mb-3 w-100'>
+      <div className="card-body">
+        <h5 className="card-title">{name}</h5>
+        <p className="card-text">Disclaimer: this file can be <code>harmfull</code></p>
+        <a href={uri} className="card-link">Download the file</a>
+      </div>
+    </div>
+  )
+}
+
+const FileList = ({ files }) => {
+  const fileList = files && files.map((file, index) =>
+    <File key={index} name={file.name} uri={file.uri} />
+  )
+
+  return (
+    <>
+      {fileList}
+    </>
+  )
+}
+
+const App = () => {
+  const [files, setFiles] = useState([])
+
+  return (
+    <div className='container p-5'>
       <div className='row'>
-        <div className='col-lg-6'>
+        <div className='col-md-12 col-lg-6'>
           <div className='display-4 pb-1'>
             Hello world <p className='lead'> From another <code> world </code>, how are you? </p>
           </div> <hr />
@@ -105,14 +141,19 @@ const App = () => {
               <Input />
             </div>
             <div className='row pb-3'>
-              <DropArea name='shd' accept={['shd']} />
-              <DropArea name='pdf' accept={['pdf']} />
-              <DropArea name='xml' accept={['xml']} />
+              <DropArea name='shd' accept={['shd']} onChange={e => setFiles(files => [...files, JSON.parse(e)])}/>
+              <DropArea name='pdf' accept={['png', 'jpeg']} onChange={e => setFiles(files => [...files, JSON.parse(e)])}/>
+              <DropArea name='xml' accept={['py']} onChange={e => setFiles(files => [...files, JSON.parse(e)])}/>
             </div>
             <div className='row pb-3' />
           </div>
         </div>
-        <div className='col-lg-6' />
+        <div className='col-md-12 col-lg-6'>
+          <div className='display-4 pb-1'>
+            Downloads <p className='lead'>Collect the <code>garbage</code>... or masterpieces? </p>
+          </div> <hr />
+          <FileList files={files} />
+        </div>
       </div>
     </div>
   )

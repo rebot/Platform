@@ -5,12 +5,13 @@ const http = require('http')
 const path = require('path')
 const uuid = require('uuid')
 const redis = require('redis')
+const process = require('process')
 const express = require('express')
 const bodyParser = require('body-parser')
 
-const {
-  promisify
-} = require('util')
+console.log = m => {
+  process.stdout.write(m + '\n')
+}
 
 // Configure the redis instance
 
@@ -38,13 +39,13 @@ wss.on('connection', s => {
   const queue = `queue-${id}`
   const broadcast = `broadcast-${id}`
   // Listen to incomming messages of the `Client`
-  s.on('message', raw => {
+  s.on('message', buffer => {
     // Start a new publisher
     const publisher = r.duplicate()
     // Publish the job to the queue
-    publisher.publish(queue, raw)
+    publisher.publish(queue, buffer)
     // Send a message back to the client
-    s.send('SERVER - Queing the job... ')
+    console.log('SERVER - Queing the job... ')
   })
   // Listen to incomming messages of the `Worker`
   subscriber.subscribe(broadcast)
@@ -53,7 +54,7 @@ wss.on('connection', s => {
     s.send(message)
   })
   // Send a welcoming message
-  s.send('SERVER - Hi, I\'m ready to serve you')
+  console.log(`SERVER - New socket started - ID: ${id}`)
 })
 
 app.use(bodyParser.urlencoded({
@@ -79,11 +80,12 @@ app.post('/send', (req, res) => {
 })
 
 app.get('/download/:fileId', (req, res) => {
-  res.json(req.params)
+  console.log(`Download started - File ID: ${req.params.fileId}`)
+  res.sendFile(path.join(__dirname, path.normalize(`../worker/temp/${req.params.fileId}`)))
 })
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, path.normalize('../build/index.html')))
+  res.sendFile(path.join(__dirname, path.normalize('./index.html')))
 })
 
 const port = process.env.PORT || 5000
